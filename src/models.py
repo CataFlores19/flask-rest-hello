@@ -12,6 +12,8 @@ class User(db.Model):
         String(120), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+    posts: Mapped[list["Post"]] = db.relationship("Post", back_populates="user")
+    comments: Mapped[list["Comment"]] = db.relationship("Comment", back_populates="user")
 
     def serialize(self):
         return {
@@ -28,7 +30,7 @@ class Media(db.Model):
         String(50), nullable=False)  # e.g., 'image', 'video'
     post_id: Mapped[int] = mapped_column(
         db.ForeignKey('post.id'), nullable=False)
-    post: Mapped["Post"] = db.relationship("Post", back_populates="media")
+    post: Mapped["Post"] = db.relationship("Post", back_populates="media", uselist=False)
     created_at: Mapped[str] = mapped_column(
         db.DateTime, default=db.func.current_timestamp())
     updated_at: Mapped[str] = mapped_column(
@@ -48,13 +50,11 @@ class Media(db.Model):
 class Post(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     caption: Mapped[str] = mapped_column(String(255), nullable=True)
-    media_id: Mapped[int] = mapped_column(
-        db.ForeignKey('media.id'), nullable=True)
-    media: Mapped["Media"] = db.relationship(
-        "Media", back_populates="post", uselist=False)
     user_id: Mapped[int] = mapped_column(
         db.ForeignKey('user.id'), nullable=False)
     user: Mapped["User"] = db.relationship("User", back_populates="posts")
+    media: Mapped[list["Media"]] = db.relationship("Media", back_populates="post")
+    comments: Mapped[list["Comment"]] = db.relationship("Comment", back_populates="post")
     created_at: Mapped[str] = mapped_column(
         db.DateTime, default=db.func.current_timestamp())
     updated_at: Mapped[str] = mapped_column(
@@ -63,7 +63,6 @@ class Post(db.Model):
     def serialize(self):
         return {
             "id": self.id,
-            "media_id": self.media_id,
             "caption": self.caption,
             "user_id": self.user_id,
             "created_at": self.created_at,
